@@ -5,4 +5,4 @@ This version also serves as the starting point for a networked version lets you 
 
 - https://github.com/los-cocos/cocos 
 
-:)
+![Image of Cocosoids](http://cdn.rawgit.com/erikbuck/Cocosoids-single/master/Cocosoids.png)
