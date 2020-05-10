@@ -1,51 +1,60 @@
-"""
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- * AUTHOR: Erik M. Buck
- *
- """
 import CommonLayers
-import GameServer
 import cocos
 from cocos.scenes.transitions import FadeTRTransition
 import pyglet
 import sys
 
 
-class Game(object):
+class GameController(object):
+   """
+   """
+   default_title = "Cocosoids"
+   default_window_width = 1366
+   default_window_height = 700
+   playLayerClass = CommonLayers.PlayLayer
+   
+   def __init__(self):
+       """ """
+       super( GameController, self ).__init__()
+       
+       self.game_layer = self.playLayerClass()
+       self.game_layer.addAsteroids(3)
+       self.ui_layer = CommonLayers.UILayer()
+       self.ui_layer.add(self.game_layer)
+       
+       self.game_scene = cocos.scene.Scene(self.ui_layer)
+
+   def start(self):
+       """ """
+       cocos.director.director.replace(FadeTRTransition(
+           self.get_scene(), 2))
+       self.game_layer.do(CommonLayers.PlayLayerAction())
+       self.game_layer.do(CommonLayers.InteractivePlayLayerAction())
+       self.game_layer.addPlayer(CommonLayers.PlayLayer.ownID)
+
+   def get_scene(self):
+       """ """
+       return self.game_scene
+
+
+class IntroController(object):
     """
     """
     
-    default_title = "Cocosoids"
-    default_window_width = 1024
-    default_window_height = 768
-
     def __init__(self):
         """ """
-        super( Game, self ).__init__()
+        super( IntroController, self ).__init__()
 
-        director_width = Game.default_window_width
-        director_height = Game.default_window_height
+        director_width = GameController.default_window_width
+        director_height = GameController.default_window_height
 
-        caption = Game.default_title + ' ' + \
+        caption = GameController.default_title + ' ' + \
             CommonLayers.PlayLayer.ownID
-        cocos.director.director.init(
+        window = cocos.director.director.init(
             director_width, director_height,
             caption = caption, fullscreen=False)
-
+        print(window.get_viewport_size())
+        
         intro_layer = CommonLayers.PlayLayer()
         intro_layer.anchor_x = director_width * 0.5
         intro_layer.anchor_y = director_height * 0.5
@@ -65,17 +74,12 @@ class Game(object):
 
     def on_join_game( self ):
         """ """
-        gameInstance = GameServer.GameServer()
-        cocos.director.director.replace(FadeTRTransition(
-            gameInstance.get_scene(), 2))
-        gameInstance.start()
+        self.on_host_game()
 
     def on_host_game( self ):
         """ """
-        gameInstance = GameServer.GameServer()
-        cocos.director.director.replace(FadeTRTransition(
-            gameInstance.get_scene(), 2))
-        gameInstance.start()
+        gameController = GameController()
+        gameController.start()
 
     def on_name( self, value ):
         """ """
@@ -106,25 +110,24 @@ class IntroMenu(cocos.menu.Menu):
             'color': (255, 255, 255, 255),
         }
 
-        l = []
-        l.append( cocos.menu.MenuItem('Join Game',
+        menuItems = []
+        menuItems.append( cocos.menu.MenuItem('Join Game',
             self.game.on_join_game ) )
-        l.append( cocos.menu.MenuItem('Host Game',
+        menuItems.append( cocos.menu.MenuItem('Host Game',
             self.game.on_host_game ) )
-        l.append( cocos.menu.EntryMenuItem('Name:',
+        menuItems.append( cocos.menu.EntryMenuItem('Name:',
             self.game.on_name,
             CommonLayers.PlayLayer.ownID) )
-        l.append( cocos.menu.MenuItem('Quit', self.game.on_quit ) )
+        menuItems.append( cocos.menu.MenuItem('Quit', self.game.on_quit ) )
 
-        self.create_menu( l )
+        self.create_menu( menuItems )
 
 
 if __name__ == "__main__":
-    game = Game()
+    controller = IntroController()
     if len(sys.argv) == 2:
         host, port = sys.argv[1].split(":")
-        print host, port
-        game.run(host, int(port))
+        print(host, port)
+        controller.run(host, int(port))
     else:
-        game.run()
-
+        controller.run()
